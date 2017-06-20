@@ -1,6 +1,6 @@
 import argparse
 from keras.preprocessing.image import ImageDataGenerator
-from keras.applications import VGG16
+from keras.applications import VGG16, ResNet50
 from keras.layers import Flatten, Dense, Dropout
 from keras.models import Model
 from keras.optimizers import Adam
@@ -21,8 +21,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    train_datagen = ImageDataGenerator(rescale=1. / 255,
-                                       shear_range=0.2,
+    train_datagen = ImageDataGenerator(shear_range=0.2,
                                        rotation_range=10,
                                        zoom_range=0.1,
                                        horizontal_flip=True)
@@ -32,14 +31,14 @@ if __name__ == '__main__':
         target_size=(args.input_height, args.input_width),
         batch_size=32, class_mode='categorical')
 
-    test_datagen = ImageDataGenerator(rescale=1. / 255)
+    test_datagen = ImageDataGenerator()
 
     test_generator = test_datagen.flow_from_directory(
         args.datapath + 'Val_crops/',
         target_size=(args.input_height, args.input_width),
         batch_size=32, class_mode='categorical')
 
-    model = VGG16(weights='imagenet', include_top=False, input_shape=(args.input_height, args.input_width, 3))
+    model = ResNet50(weights='imagenet', include_top=False, input_shape=(args.input_height, args.input_width, 3))
 
     last = model.output
     x = Flatten()(last)
@@ -51,14 +50,14 @@ if __name__ == '__main__':
 
     f_model = Model(model.input, preds)
 
-    f_model.compile(loss='categorical_crossentropy', optimizer=Adam(lr=1e-3), metrics=['accuracy'])
+    f_model.compile(loss='categorical_crossentropy', optimizer=Adam(lr=1e-4), metrics=['accuracy'])
 
     tbCallBack = TensorBoard(log_dir='./logs/{:%Y_%m_%d_%H_%M}'.format(datetime.datetime.now()), histogram_freq=0, write_graph=True, write_images=True)
 
     history = f_model.fit_generator(
         train_generator,
-        samples_per_epoch=400,
-        nb_epoch=5,
+        samples_per_epoch=1200,
+        nb_epoch=30,
         validation_data=test_generator,
         nb_val_samples=225,
         callbacks=[tbCallBack])
