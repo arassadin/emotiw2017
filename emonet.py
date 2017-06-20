@@ -1,10 +1,11 @@
-import matplotlib.pyplot as plt
 import argparse
 from keras.preprocessing.image import ImageDataGenerator
 from keras.applications import VGG16
 from keras.layers import Flatten, Dense, Dropout
 from keras.models import Model
 from keras.optimizers import Adam
+from keras.callbacks import TensorBoard
+import datetime
 
 
 class ArgsFormatter(argparse.ArgumentDefaultsHelpFormatter,
@@ -52,33 +53,14 @@ if __name__ == '__main__':
 
     f_model.compile(loss='categorical_crossentropy', optimizer=Adam(lr=1e-3), metrics=['accuracy'])
 
+    tbCallBack = TensorBoard(log_dir='./logs/{:%Y_%m_%d_%H_%M}'.format(datetime.datetime.now()), histogram_freq=0, write_graph=True, write_images=True)
+
     history = f_model.fit_generator(
         train_generator,
         samples_per_epoch=400,
         nb_epoch=5,
         validation_data=test_generator,
-        nb_val_samples=225)
+        nb_val_samples=225,
+        callbacks=[tbCallBack])
 
     f_model.save_weights('model.h5')
-
-    # Simple plotting - to be changed
-
-    # Accuracy
-    plt.figure()
-    plt.plot(history.history['acc'])
-    plt.plot(history.history['val_acc'])
-    plt.title('model accuracy')
-    plt.ylabel('accuracy')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'test'], loc='upper left')
-
-    # Loss
-    plt.figure()
-    plt.plot(history.history['loss'])
-    plt.plot(history.history['val_loss'])
-    plt.title('model loss')
-    plt.ylabel('loss')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'test'], loc='upper left')
-
-    plt.show()
